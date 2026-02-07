@@ -558,15 +558,15 @@ const levels = [
     playerStart: { x: 120, y: 300 },
     exitPos: { x: 680, y: 300 },
     hunterData: [],
-    fragmentData: [{ x: 400, y: 180 }, { x: 400, y: 420 }],
+    fragmentData: [{ x: 200, y: 300 }, { x: 400, y: 450 }],
     createWalls: function(w, h) {
       return [
         { x1: 50, y1: 50, x2: w - 50, y2: 50 },
         { x1: w - 50, y1: 50, x2: w - 50, y2: h - 50 },
         { x1: w - 50, y1: h - 50, x2: 50, y2: h - 50 },
         { x1: 50, y1: h - 50, x2: 50, y2: 50 },
-        { x1: 300, y1: 100, x2: 300, y2: 380 },
-        { x1: 500, y1: 220, x2: 500, y2: 500 }
+        { x1: 320, y1: 100, x2: 320, y2: 350 },
+        { x1: 480, y1: 250, x2: 480, y2: h - 50 }
       ];
     }
   },
@@ -1229,66 +1229,83 @@ function draw() {
   ctx.translate(screenShake.x, screenShake.y);
   
   if (gameState === 'playing' || gameState === 'dead') {
-    // Draw memory geometry
+    // Draw memory geometry (faint persistent traces)
     ctx.lineWidth = 1;
     memoryGeo.forEach(function(m) {
-      ctx.strokeStyle = 'rgba(0, 60, 60, ' + m.alpha + ')';
+      ctx.strokeStyle = 'rgba(0, 100, 100, ' + m.alpha + ')';
+      ctx.shadowColor = 'rgba(0, 150, 150, 0.3)';
+      ctx.shadowBlur = 5;
       ctx.beginPath();
       ctx.moveTo(m.x1, m.y1);
       ctx.lineTo(m.x2, m.y2);
       ctx.stroke();
     });
+    ctx.shadowBlur = 0;
     
-    // Draw revealed geometry
+    // Draw revealed geometry (bright, glowing)
     revealedGeo.forEach(function(g) {
       ctx.globalAlpha = g.alpha;
       
       if (g.type === 'line') {
-        ctx.strokeStyle = '#0aa';
-        ctx.lineWidth = 2;
-        ctx.shadowColor = '#0aa';
-        ctx.shadowBlur = 10;
+        // Wall - cyan glow
+        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#00ffff';
+        ctx.shadowBlur = 25;
         ctx.beginPath();
         ctx.moveTo(g.x1, g.y1);
         ctx.lineTo(g.x2, g.y2);
         ctx.stroke();
+        // Double stroke for intensity
+        ctx.shadowBlur = 40;
+        ctx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
+        ctx.lineWidth = 6;
+        ctx.stroke();
         ctx.shadowBlur = 0;
       } else {
-        const color = g.color || [0, 180, 180];
-        ctx.strokeStyle = 'rgb(' + color[0] + ',' + color[1] + ',' + color[2] + ')';
-        ctx.lineWidth = g.isHunter ? 4 : 3;
-        ctx.shadowColor = ctx.strokeStyle;
-        ctx.shadowBlur = g.isHunter ? 22 : 15;
+        // Circle (hunter/exit)
+        var color = g.color || [0, 255, 255];
+        var colorStr = 'rgb(' + color[0] + ',' + color[1] + ',' + color[2] + ')';
+        ctx.strokeStyle = colorStr;
+        ctx.lineWidth = g.isHunter ? 5 : 4;
+        ctx.shadowColor = colorStr;
+        ctx.shadowBlur = g.isHunter ? 40 : 30;
         ctx.beginPath();
         ctx.arc(g.x, g.y, g.radius, 0, Math.PI * 2);
         ctx.stroke();
+        // Fill for hunters
+        if (g.isHunter) {
+          ctx.fillStyle = 'rgba(' + color[0] + ',' + color[1] + ',' + color[2] + ', 0.15)';
+          ctx.fill();
+        }
         ctx.shadowBlur = 0;
       }
     });
     
     ctx.globalAlpha = 1;
     
-    // Draw fragments
+    // Draw fragments (bright green/cyan, pulsing)
     fragments.forEach(function(frag) {
       if (frag.collected || frag.revealAlpha <= 0) return;
       
       ctx.globalAlpha = frag.revealAlpha;
-      ctx.strokeStyle = '#0da';
-      ctx.lineWidth = 2;
-      ctx.shadowColor = '#0da';
-      ctx.shadowBlur = 12;
+      ctx.strokeStyle = '#00ffaa';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#00ffaa';
+      ctx.shadowBlur = 30;
       ctx.beginPath();
       ctx.arc(frag.x, frag.y, frag.radius, 0, Math.PI * 2);
       ctx.stroke();
       
-      // Diamond shape
+      // Inner diamond
       ctx.beginPath();
-      ctx.moveTo(frag.x, frag.y - 5);
-      ctx.lineTo(frag.x + 5, frag.y);
-      ctx.lineTo(frag.x, frag.y + 5);
-      ctx.lineTo(frag.x - 5, frag.y);
+      ctx.moveTo(frag.x, frag.y - 7);
+      ctx.lineTo(frag.x + 7, frag.y);
+      ctx.lineTo(frag.x, frag.y + 7);
+      ctx.lineTo(frag.x - 7, frag.y);
       ctx.closePath();
-      ctx.fillStyle = 'rgba(0, 220, 170, ' + (frag.revealAlpha * 0.4) + ')';
+      ctx.fillStyle = 'rgba(0, 255, 170, ' + (frag.revealAlpha * 0.6) + ')';
+      ctx.shadowBlur = 20;
       ctx.fill();
       
       ctx.shadowBlur = 0;
@@ -1324,43 +1341,59 @@ function draw() {
       ctx.shadowBlur = 0;
     });
     
-    // Draw particles
+    // Draw particles (glowing dots)
     particles.forEach(function(p) {
-      const alpha = p.life / p.maxLife;
-      const color = p.color || [0, 180, 180];
+      var alpha = p.life / p.maxLife;
+      var color = p.color || [0, 255, 255];
       ctx.fillStyle = 'rgba(' + color[0] + ',' + color[1] + ',' + color[2] + ',' + alpha + ')';
+      ctx.shadowColor = 'rgba(' + color[0] + ',' + color[1] + ',' + color[2] + ', 0.8)';
+      ctx.shadowBlur = 8;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
       ctx.fill();
     });
+    ctx.shadowBlur = 0;
     
-    // Draw player - ensure fully visible
+    // Draw player - bright white core with cyan glow
     ctx.globalAlpha = 1;
+    
+    // Outer glow
     ctx.fillStyle = '#fff';
-    ctx.shadowColor = '#fff';
-    ctx.shadowBlur = 14;
+    ctx.shadowColor = '#00ffff';
+    ctx.shadowBlur = 30;
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // White core
+    ctx.shadowColor = '#ffffff';
+    ctx.shadowBlur = 15;
     ctx.beginPath();
     ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
     
-    // Player inner glow
-    const playerGradient = ctx.createRadialGradient(player.x, player.y, 0, player.x, player.y, player.radius);
-    playerGradient.addColorStop(0, 'rgba(70, 180, 180, 0.6)');
-    playerGradient.addColorStop(1, 'rgba(70, 180, 180, 0)');
+    // Inner cyan gradient
+    var playerGradient = ctx.createRadialGradient(player.x, player.y, 0, player.x, player.y, player.radius);
+    playerGradient.addColorStop(0, 'rgba(0, 255, 255, 0.8)');
+    playerGradient.addColorStop(0.5, 'rgba(0, 200, 200, 0.4)');
+    playerGradient.addColorStop(1, 'rgba(0, 150, 150, 0)');
     ctx.fillStyle = playerGradient;
     ctx.beginPath();
-    ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+    ctx.arc(player.x, player.y, player.radius * 1.2, 0, Math.PI * 2);
     ctx.fill();
     
-    // Charge indicator
+    // Charge indicator (pulsing ring)
     if (isCharging) {
-      const chargeRatio = Math.min(1, chargeTime / MAX_CHARGE);
-      ctx.strokeStyle = 'rgba(0, 220, 220, ' + (0.2 + chargeRatio * 0.45) + ')';
-      ctx.lineWidth = 2;
+      var chargeRatio = Math.min(1, chargeTime / MAX_CHARGE);
+      ctx.strokeStyle = 'rgba(0, 255, 255, ' + (0.3 + chargeRatio * 0.6) + ')';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#00ffff';
+      ctx.shadowBlur = 20 + chargeRatio * 20;
       ctx.beginPath();
-      ctx.arc(player.x, player.y, player.radius + 5 + chargeRatio * 20, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * chargeRatio);
+      ctx.arc(player.x, player.y, player.radius + 8 + chargeRatio * 25, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * chargeRatio);
       ctx.stroke();
+      ctx.shadowBlur = 0;
     }
   }
   

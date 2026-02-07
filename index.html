@@ -1297,25 +1297,31 @@ function draw() {
     
     // Draw pulses
     pulses.forEach(function(pulse) {
-      const gradient = ctx.createRadialGradient(
-        pulse.x, pulse.y, pulse.radius - 10,
-        pulse.x, pulse.y, pulse.radius + 10
-      );
+      if (pulse.radius < 2) return; // Too small to draw
+      
+      // Outer glow
+      var innerR = Math.max(0, pulse.radius - 15);
+      var outerR = pulse.radius + 15;
+      var gradient = ctx.createRadialGradient(pulse.x, pulse.y, innerR, pulse.x, pulse.y, outerR);
       gradient.addColorStop(0, 'transparent');
-      gradient.addColorStop(0.5, 'rgba(0, 160, 160, ' + (pulse.alpha * 0.3) + ')');
+      gradient.addColorStop(0.5, 'rgba(0, 255, 255, ' + (pulse.alpha * 0.4) + ')');
       gradient.addColorStop(1, 'transparent');
       
       ctx.strokeStyle = gradient;
-      ctx.lineWidth = 20;
+      ctx.lineWidth = 30;
       ctx.beginPath();
       ctx.arc(pulse.x, pulse.y, pulse.radius, 0, Math.PI * 2);
       ctx.stroke();
       
-      ctx.strokeStyle = 'rgba(160, 230, 230, ' + (pulse.alpha * 0.6) + ')';
+      // Core ring
+      ctx.strokeStyle = 'rgba(200, 255, 255, ' + (pulse.alpha * 0.8) + ')';
       ctx.lineWidth = 2;
+      ctx.shadowColor = 'rgba(0, 255, 255, 0.8)';
+      ctx.shadowBlur = 15;
       ctx.beginPath();
       ctx.arc(pulse.x, pulse.y, pulse.radius, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.shadowBlur = 0;
     });
     
     // Draw particles

@@ -884,8 +884,8 @@ function update(dt) {
   }
   
   // Player movement
-  const acceleration = 620;
-  const friction = 6;
+  const acceleration = 1200;
+  const friction = 0.88; // per-frame multiplier at 60fps
   let ax = 0, ay = 0;
   
   if (keys['w'] || keys['arrowup']) ay -= 1;
@@ -901,10 +901,10 @@ function update(dt) {
   
   player.vx += ax * acceleration * effectiveDt;
   player.vy += ay * acceleration * effectiveDt;
-  player.vx *= Math.pow(0.001, effectiveDt * friction);
-  player.vy *= Math.pow(0.001, effectiveDt * friction);
+  player.vx *= Math.pow(friction, effectiveDt * 60);
+  player.vy *= Math.pow(friction, effectiveDt * 60);
   
-  const maxSpeed = 165;
+  const maxSpeed = 280;
   const speed = Math.hypot(player.vx, player.vy);
   if (speed > maxSpeed) {
     player.vx = (player.vx / speed) * maxSpeed;
@@ -1328,7 +1328,8 @@ function draw() {
       ctx.fill();
     });
     
-    // Draw player
+    // Draw player - ensure fully visible
+    ctx.globalAlpha = 1;
     ctx.fillStyle = '#fff';
     ctx.shadowColor = '#fff';
     ctx.shadowBlur = 14;
